@@ -17,7 +17,7 @@
     ],
     "outDir": "lib",
     "target": "esnext",
-    "module": "esnext",
+    "module": "commonjs",
     "lib": [
       "esnext",
       "DOM"
