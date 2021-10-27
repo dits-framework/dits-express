@@ -3,8 +3,10 @@ import { Express, Request, Response, IRouterMatcher } from 'express'
 import { json as JsonParser, urlencoded as FormParser } from 'body-parser'
 
 
-import { security, HandlerRegistry, Container, Metadata, DispatchEvent, service, HandlerDeclaration, DispatchPredicate, Handler } from '@dits/dits'
-const { UserPrincipal } = security
+import { security, Security, DI } from '@dits/dits'
+import { HandlerDeclaration, HandlerRegistry, Metadata, service, Handler, Container, DispatchEvent, DispatchPredicate } from '@dits/dits/lib/di/di'
+
+const { UserPrincipal } = Security
 
 
 export const EXPRESS_KEY = Symbol('dits:express')
