@@ -19,7 +19,7 @@
     "target": "esnext",
     "module": "commonjs",
     "lib": [
-      "esnext",
+      "es2017",
       "DOM"
     ],
     "sourceMap": true,

@@ -1,10 +1,8 @@
-
-import { Express, Request, Response, IRouterMatcher } from 'express'
+import { service, security, Security, DI } from '@dits/dits'
+import { Application, Request, Response, IRouterMatcher } from 'express'
 import { json as JsonParser, urlencoded as FormParser } from 'body-parser'
 
-
-import { security, Security, DI } from '@dits/dits'
-import { HandlerDeclaration, HandlerRegistry, Metadata, service, Handler, Container, DispatchEvent, DispatchPredicate } from '@dits/dits/lib/di/di'
+import { HandlerDeclaration, HandlerRegistry, Metadata, Handler, Container, DispatchEvent, DispatchPredicate } from '@dits/dits/lib/di/di'
 
 const { UserPrincipal } = Security
 
@@ -33,14 +31,27 @@ export class WebEvent extends DispatchEvent {
 export type HttpMethod = 'GET' | 'PUT' | 'POST' | 'DELETE'
 
 
-export const configureExpress = async (app: Express) => {
-  const zc: Container | undefined = service.container
+export const configureExpress = async (app: Application, container?: Container) => {
+
+  if (!container) {
+    // @ts-ignore
+    console.log('[express] no container provided; attempting global container', service.promise)
+
+    try {
+      // @ts-ignore
+      await service.promise
+      container = service.container
+    } catch (err) {
+      console.warn('Failed waiting for service promise', err)
+    }
+  }
+
   // const zc: Container | undefined = zones.get('container')
-  if (!zc) {
+  if (!container) {
     throw new Error('Could not initialize express: no zone container found; are you sure you are running inside `initApp` handler?')
   }
 
-  const registry: HandlerRegistry | undefined = zc.get(HandlerRegistry)
+  const registry: HandlerRegistry | undefined = container.get(HandlerRegistry)
   if (!registry) {
     throw new Error('Could not initialize press: no zone handler registry found; are you sure you are running inside `initApp` handler?')
   }
