@@ -31,31 +31,7 @@ export class WebEvent extends DispatchEvent {
 export type HttpMethod = 'GET' | 'PUT' | 'POST' | 'DELETE'
 
 
-export const configureExpress = async (app: Application, container?: Container) => {
-
-  if (!container) {
-    // @ts-ignore
-    console.log('[express] no container provided; attempting global container', service.promise)
-
-    try {
-      // @ts-ignore
-      await service.promise
-      container = service.container
-    } catch (err) {
-      console.warn('Failed waiting for service promise', err)
-    }
-  }
-
-  // const zc: Container | undefined = zones.get('container')
-  if (!container) {
-    throw new Error('Could not initialize express: no zone container found; are you sure you are running inside `initApp` handler?')
-  }
-
-  const registry: HandlerRegistry | undefined = container.get(HandlerRegistry)
-  if (!registry) {
-    throw new Error('Could not initialize press: no zone handler registry found; are you sure you are running inside `initApp` handler?')
-  }
-
+export const configureExpress = async (app: Application, registry: HandlerRegistry) => {
   // middleware needs to go first, if you want our routes to be affected
   app.use(JsonParser())
   app.use(FormParser())
