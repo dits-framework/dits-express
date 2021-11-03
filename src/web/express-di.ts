@@ -1,10 +1,8 @@
-import { service, security, Security, DI } from '@dits/dits'
+import { service, security, Security } from '@dits/dits'
 import { Application, Request, Response, IRouterMatcher } from 'express'
 import { json as JsonParser, urlencoded as FormParser } from 'body-parser'
 
 import { HandlerDeclaration, HandlerRegistry, Metadata, Handler, Container, DispatchEvent, DispatchPredicate } from '@dits/dits/lib/di/di'
-
-const { UserPrincipal } = Security
 
 
 export const EXPRESS_KEY = Symbol('dits:express')

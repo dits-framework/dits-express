@@ -5,7 +5,8 @@
   "types": "lib/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "build:clean": "rm -rf node_modules package-lock.json; npm i --only=prod; npm run build",
+    "build:watch": "tsc --watch",
+    "build:clean": "rm -rf lib node_modules package-lock.json; npm i --only=prod; npm run build",
     "release": "echo 'Latest tag:' && git describe; read -p 'Version number?: ' VERSION; git add -A; git commit -am 'builds'; git push; git tag -a $VERSION -m VERSION; git push --tags"
   },
   "author": "hexly",
@@ -22,7 +23,7 @@
     "lib": "lib"
   },
   "peerDependencies": {
-    "@dits/dits": ">= 0.0.24",
+    "@dits/dits": ">= 0.0.26",
     "@types/express": ">= 4.17.x",
     "@types/jest": ">= 27.0.x",
     "body-parser": ">= 1.19.x",
