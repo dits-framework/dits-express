@@ -1,8 +1,8 @@
-import { service, security, Security } from '@dits/dits'
+import service, { SecurityContext } from '@dits/dits'
 import { Application, Request, Response, IRouterMatcher } from 'express'
 import { json as JsonParser, urlencoded as FormParser } from 'body-parser'
 
-import { HandlerDeclaration, HandlerRegistry, Metadata, Handler, Container, DispatchEvent, DispatchPredicate } from '@dits/dits/lib/di/di'
+import { HandlerDeclaration, HandlerRegistry, Metadata, Handler, Container, DispatchEvent, DispatchPredicate } from '@dits/dits'
 
 
 export const EXPRESS_KEY = Symbol('dits:express')
@@ -65,6 +65,8 @@ export const requestDelegateHandler = (path: string, method: HttpMethod, h: Hand
       const parent: Container = service.zone?.get('container')
       const container = new Container(parent)
       const principal = await service.context?.authenticate(e)
+      const sc = new SecurityContext(principal)
+      container.register(SecurityContext, sc)
       const zone = service.zone!.fork({
         name: `web-${reqIdx++}`,
         properties: {
