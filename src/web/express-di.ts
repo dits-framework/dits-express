@@ -1,8 +1,8 @@
-import service, { SecurityContext } from '@dits/dits'
+import service, { ANONYMOUS, Authenticator, SecurityContext, Service } from '@dits/dits'
 import { Application, Request, Response, IRouterMatcher } from 'express'
 import { json as JsonParser, urlencoded as FormParser } from 'body-parser'
 
-import { HandlerDeclaration, HandlerRegistry, Metadata, Handler, Container, DispatchEvent, DispatchPredicate } from '@dits/dits'
+import { HandlerDeclaration, HandlerRegistry, Handler, Container, DispatchEvent, DispatchPredicate } from '@dits/dits'
 
 
 export const EXPRESS_KEY = Symbol('dits:express')
@@ -22,7 +22,7 @@ export class WebEvent extends DispatchEvent {
     public params: any,
     public headers: any // TODO type
   ) {
-    super(EXPRESS_KEY)
+    super('express')
   }
 }
 
@@ -35,21 +35,27 @@ export const configureExpress = async (app: Application, registry: HandlerRegist
   app.use(FormParser())
 
   // console.log('looking for events', WebEvent, registry)
-  registry.getDeclarations(WebEvent).map(h => {
-    const { path, methods } = h.metadata[HTTP_META_KEY] as HttpConfig
-    methods.map(method => {
-      const fn = ((app as any)[method.toLowerCase()] as IRouterMatcher<unknown>).bind(app)
-      fn(path, requestDelegateHandler(path, method, h))
+  registry.getDeclarations(WebEvent).map(hr => {
+    // const resolvers: HttpConfig[] = Reflect.getMetadata(HTTP_META_KEY, h.target.constructor) || []
+    hr.metadata.http = (Reflect.getMetadata(HTTP_META_KEY, hr.target.constructor) || []) as HttpConfig[]
+    hr.metadata.http.forEach(({ path, methods, handler }: HttpConfig) => {
+      methods.forEach(method => {
+        const fn = ((app as any)[method.toLowerCase()] as IRouterMatcher<unknown>).bind(app)
+        fn(path, requestDelegateHandler(path, method, hr, hr.target[handler]))
+      })
     })
+
+    // const { path, methods } = h.metadata[HTTP_META_KEY] as HttpConfig
+    // methods.map(method => {
+    //   const fn = ((app as any)[method.toLowerCase()] as IRouterMatcher<unknown>).bind(app)
+    //   fn(path, requestDelegateHandler(path, method, h))
+    // })
   })
   return app
 }
 
 let reqIdx = 1
-export const requestDelegateHandler = (path: string, method: HttpMethod, h: HandlerDeclaration<WebEvent>) => {
-  if (!service.zone) {
-    throw new Error(`Cannot create request delegate for path ${path} until root "app" zone is configured`)
-  }
+export const requestDelegateHandler = (path: string, method: HttpMethod, h: HandlerDeclaration<WebEvent>, handler: Function) => {
   return async (req: Request, res: Response) => {
     const e = new WebEvent(
       req.path,
@@ -62,11 +68,25 @@ export const requestDelegateHandler = (path: string, method: HttpMethod, h: Hand
     )
 
     try {
-      const parent: Container = service.zone?.get('container')
-      const container = new Container(parent)
-      const principal = await service.context?.authenticate(e)
-      const sc = new SecurityContext(principal)
-      container.register(SecurityContext, sc)
+      // const parent: Container = service.zone?.get('container')
+      // const container = new Container(parent)
+      // const principal = await service.context?.authenticate(e)
+      // const sc = new SecurityContext(principal)
+      // container.register(SecurityContext, sc)
+      // const zone = service.zone!.fork({
+      //   name: `web-${reqIdx++}`,
+      //   properties: {
+      //     rootEvent: e,
+      //     container,
+      //     principal
+      //   }
+      // })
+
+      const service = Service.fromZone()
+      const container = Container.fromZone()
+      const authenticator = container.get<Authenticator>(Authenticator)
+      const principal = authenticator ? await authenticator.authenticate(e) : ANONYMOUS
+
       const zone = service.zone!.fork({
         name: `web-${reqIdx++}`,
         properties: {
@@ -75,8 +95,14 @@ export const requestDelegateHandler = (path: string, method: HttpMethod, h: Hand
           principal
         }
       })
+
       await zone.run(async () => {
         try {
+
+          const sc = new SecurityContext(principal)
+          container.provide(SecurityContext, sc)
+          container.provide(WebEvent, e)
+
           const result = await h.handler(e)
 
           // if the handler got it covered, bounce
@@ -100,12 +126,15 @@ export const requestDelegateHandler = (path: string, method: HttpMethod, h: Hand
   }
 }
 
-type HttpConfig = { path: string, methods: HttpMethod[] }
+type HttpConfig = { path: string, target: any, handler: string, methods: HttpMethod[] }
 export const HTTP_META_KEY = Symbol("resolver");
 export function HTTP(path: string, methods: HttpMethod[], ...predicates: DispatchPredicate<WebEvent>[]) {
   return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
-    Metadata(HTTP_META_KEY, { path, methods })(target, propertyKey)
-    Handler(...predicates)(target, propertyKey, descriptor)
+    // Metadata(HTTP_META_KEY, { path, methods })(target, propertyKey)
+    const resolvers: HttpConfig[] = Reflect.getMetadata(HTTP_META_KEY, target.constructor) || []
+    resolvers.push({ path, target, handler: propertyKey, methods })
+    Reflect.defineMetadata(HTTP_META_KEY, resolvers, target.constructor);
+    Handler(WebEvent, ...predicates)(target, propertyKey, descriptor)
   }
 }
 
