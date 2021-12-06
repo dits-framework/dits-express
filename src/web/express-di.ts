@@ -100,8 +100,8 @@ export const requestDelegateHandler = (path: string, method: HttpMethod, h: Hand
         try {
 
           const sc = new SecurityContext(principal)
-          container.provide(SecurityContext, sc)
-          container.provide(WebEvent, e)
+          container.provide(SecurityContext, sc, true)
+          container.provide(WebEvent, e, true)
 
           const result = await handler(e)
 
