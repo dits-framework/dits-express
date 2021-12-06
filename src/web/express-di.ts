@@ -32,7 +32,7 @@ export type HttpMethod = 'GET' | 'PUT' | 'POST' | 'DELETE'
 export const configureExpress = async (app: Application, registry: HandlerRegistry) => {
   // middleware needs to go first, if you want our routes to be affected
   app.use(JsonParser())
-  app.use(FormParser())
+  app.use(FormParser({ extended: true }))
 
   // console.log('looking for events', WebEvent, registry)
   registry.getDeclarations(WebEvent).map(hr => {
@@ -103,7 +103,7 @@ export const requestDelegateHandler = (path: string, method: HttpMethod, h: Hand
           container.provide(SecurityContext, sc)
           container.provide(WebEvent, e)
 
-          const result = await h.handler(e)
+          const result = await handler(e)
 
           // if the handler got it covered, bounce
           if (e.response.manuallyHandled) {
