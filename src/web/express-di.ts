@@ -37,6 +37,7 @@ export const configureExpress = async (app: Application, registry: HandlerRegist
   // console.log('looking for events', WebEvent, registry)
   registry.getDeclarations(WebEvent).map(hr => {
     // const resolvers: HttpConfig[] = Reflect.getMetadata(HTTP_META_KEY, h.target.constructor) || []
+    hr.metadata = hr.metadata || {}
     hr.metadata.http = (Reflect.getMetadata(HTTP_META_KEY, hr.target.constructor) || []) as HttpConfig[]
     hr.metadata.http.forEach(({ path, methods, handler }: HttpConfig) => {
       methods.forEach(method => {
