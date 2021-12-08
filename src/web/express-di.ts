@@ -99,9 +99,14 @@ export const requestDelegateHandler = (path: string, method: HttpMethod, h: Hand
       await zone.run(async () => {
         try {
 
+          const child = Container.fromZone();
+
+          // seems like this should come later, but causes issues if so
+          await child.initialize('web', 'graphql')
+
           const sc = new SecurityContext(principal)
-          container.provide(SecurityContext, sc, true)
-          container.provide(WebEvent, e, true)
+          child.provide(SecurityContext, sc, true)
+          child.provide(WebEvent, e, true)
 
           const result = await handler(e)
 
