@@ -102,12 +102,13 @@ export const requestDelegateHandler = (path: string, method: HttpMethod, h: Hand
 
           const child = Container.fromZone();
 
-          // seems like this should come later, but causes issues if so
-          await child.initialize('web', 'graphql')
-
           const sc = new SecurityContext(principal)
           child.provide(SecurityContext, sc, true)
           child.provide(WebEvent, e, true)
+
+          // seems like this should come later, but causes issues if so
+          await child.initialize('web', 'graphql')
+
 
           // args are automatically put in!
           const result = await handler()
