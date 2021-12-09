@@ -109,7 +109,8 @@ export const requestDelegateHandler = (path: string, method: HttpMethod, h: Hand
           child.provide(SecurityContext, sc, true)
           child.provide(WebEvent, e, true)
 
-          const result = await handler(e)
+          // args are automatically put in!
+          const result = await handler()
 
           // if the handler got it covered, bounce
           if (e.response.manuallyHandled) {
